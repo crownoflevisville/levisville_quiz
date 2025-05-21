@@ -292,6 +292,31 @@ Valemont: ${data.scores.valemont}
     form.style.display = "none";
     displayResult(saveData);
   });
-</script>
+</script> 
+<script>
+  async function saveQuizResponses(data) {
+    try {
+      const response = await fetch('https://script.google.com/macros/s/AKfycbwKp2wA_gyzk7jIO-S2CaS1IesvVaorgsV888fMCKjzWwmlBah61i05LSAdTTeEQ4We3A/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      console.log(result);
+    } catch (error) {
+      console.error('Error saving responses:', error);
+    }
+  }
+
+  function onQuizSubmit() {
+    const answers = {
+      q1: document.querySelector('input[name="q1"]:checked')?.value || '',
+      q2: document.querySelector('input[name="q2"]:checked')?.value || '',
+      q3: document.querySelector('input[name="q3"]:checked')?.value || '',
+      // Add more questions based on your quiz
+    };
+    saveQuizResponses(answers);
+  }
+</script>        
 </body>
 </html>
