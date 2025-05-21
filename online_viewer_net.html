@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Levisville Academy House Quiz</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    margin: 0; padding: 20px;
+  }
+  .container {
+    background: white;
+    padding: 20px 25px;
+    border-radius: 8px;
+    max-width: 750px;
+    margin: auto;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+  }
+  p {
+    text-align: center;
+    color: #555;
+  }
+  .question {
+    margin-bottom: 20px;
+  }
+  .question label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+  }
+  .user-info {
+    margin-bottom: 20px;
+  }
+  .user-info label {
+    font-weight: bold;
+  }
+  .user-info input {
+    display: block;
+    margin-bottom: 10px;
+    padding: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+  button {
+    padding: 10px 20px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .credits {
+    text-align: center;
+    font-size: 0.9em;
+    color: #777;
+    margin-top: 30px;
+  }
+  #result {
+    background: #e8f0fe;
+    border: 1px solid #a4c8f0;
+    padding: 15px;
+    margin-top: 25px;
+    border-radius: 6px;
+    font-weight: bold;
+    text-align: center;
+  }
+  #exportBtn {
+    display: none;
+    margin: 20px auto 0;
+    padding: 10px 15px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Levisville Academy House Alignment Quiz</h1>
+  <p>Answer honestly. Your alignment will be determined by your values, not your intentions. Submit only once. Timestamp and identity are recorded.</p>
+
+  <form id="quizForm">
+    <div class="user-info">
+      <label for="username">Name:</label>
+      <input type="text" id="username" name="username" required />
+      <label for="quizDate">Date:</label>
+      <input type="date" id="quizDate" name="quizDate" required />
+    </div>
+
+    <!-- Questions inserted by JS -->
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <div id="result"></div>
+  <button id="exportBtn">Export Results</button>
+
+  <div class="credits">
+    &copy; 2025 Levisville Academy. All rights reserved.
+  </div>
+</div>
+
+<script>
+  const questions = [
+    "I tend to stay calm and centered even when chaos surrounds me.",
+    "I’m naturally driven to chase after the things I want, no matter how risky.",
+    "I enjoy solving puzzles and uncovering how things work beneath the surface.",
+    "I often keep my true thoughts hidden to maintain control of a situation.",
+    "I’d rather follow what feels right to me than what’s popular.",
+    "I enjoy being at the center of attention and voicing my thoughts boldly.",
+    "I find satisfaction in dissecting ideas and asking deep questions.",
+    "I prefer not to rely on others and value my independence.",
+    "I’m guided more by inner values than external rewards.",
+    "I feel most alive when I’m chasing a goal or proving myself.",
+    "I like systems and patterns — they help me understand the world better.",
+    "I tend to stay one step ahead by keeping my plans to myself.",
+    "I rarely act impulsively; I’d rather pause and reflect first.",
+    "I’m easily excited by new ventures and don’t hesitate to dive in.",
+    "I enjoy a challenge that tests both my mind and patience.",
+    "I like being in control of how much of myself others truly know.",
+    "I prefer peaceful, meaningful interactions over loud or chaotic ones.",
+    "I don’t like sitting still — I need to be working toward something.",
+    "I can get lost in thought, especially when learning something complex.",
+    "I find strength in being unpredictable and difficult to read."
+  ];
+
+  // Map questions to Houses:
+  // House Glacien: Q1,5,9,13,17
+  // House Pyraeth: Q2,6,10,14,18
+  // House Braegorn: Q3,7,11,15,19
+  // House Valemont: Q4,8,12,16,20
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("quizForm");
+
+    questions.forEach((q, i) => {
+      const div = document.createElement("div");
+      div.className = "question";
+      div.innerHTML = `
+        <label for="q${i + 1}">${i + 1}. ${q}</label>
+        <select id="q${i + 1}" name="q${i + 1}" required>
+          <option value="">Select an option</option>
+          <option value="5">Strongly Agree</option>
+          <option value="4">Agree</option>
+          <option value="3">Neutral</option>
+          <option value="2">Disagree</option>
+          <option value="1">Strongly Disagree</option>
+        </select>
+      `;
+      form.insertBefore(div, form.querySelector("button"));
+    });
+
+    // Check if user already took the quiz
+    const saved = localStorage.getItem("levisvilleQuizTaken");
+    if (saved) {
+      displayResult(JSON.parse(saved));
+      form.style.display = "none";
+    }
+  });
+
+  const houseQuestions = {
+    glacien: [1,5,9,13,17],
+    pyraeth: [2,6,10,14,18],
+    braegorn: [3,7,11,15,19],
+    valemont: [4,8,12,16,20]
+  };
+
+  function calculateScores(formData) {
+    // Sum scores per house
+    const scores = {glacien:0, pyraeth:0, braegorn:0, valemont:0};
+
+    for (const house in houseQuestions) {
+      houseQuestions[house].forEach(qNum => {
+        scores[house] += parseInt(formData.get("q"+qNum)) || 0;
+      });
+    }
+
+    return scores;
+  }
+
+  function getTopHouse(scores) {
+    // Find house with highest score
+    let max = -Infinity;
+    let topHouse = "";
+    for (const house in scores) {
+      if (scores[house] > max) {
+        max = scores[house];
+        topHouse = house;
+      }
+    }
+    return topHouse;
+  }
+
+  function houseDescription(house) {
+    switch(house) {
+      case "glacien":
+        return "House Glacien: Calm, wise, and guided by inner values.";
+      case "pyraeth":
+        return "House Pyraeth: Bold, ambitious, and fearless in pursuit.";
+      case "braegorn":
+        return "House Braegorn: Curious, analytical, and thoughtful.";
+      case "valemont":
+        return "House Valemont: Secretive, strategic, and independent.";
+      default:
+        return "Unknown House";
+    }
+  }
+
+  function displayResult(data) {
+    const resultDiv = document.getElementById("result");
+    const exportBtn = document.getElementById("exportBtn");
+
+    resultDiv.innerHTML = `
+      <h2>Thank you, ${data.username}!</h2>
+      <p>Date of completion: ${data.quizDate}</p>
+      <p>Your house alignment is:</p>
+      <h3>${houseDescription(data.topHouse)}</h3>
+    `;
+
+    exportBtn.style.display = "block";
+
+    exportBtn.onclick = () => {
+      const content = `
+Name: ${data.username}
+Date: ${data.quizDate}
+House: ${data.topHouse.toUpperCase()}
+Description: ${houseDescription(data.topHouse)}
+Scores:
+Glacien: ${data.scores.glacien}
+Pyraeth: ${data.scores.pyraeth}
+Braegorn: ${data.scores.braegorn}
+Valemont: ${data.scores.valemont}
+      `.trim();
+
+      const blob = new Blob([content], {type: "text/plain"});
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Levisville_House_Quiz_${data.username.replace(/\s+/g,"_")}_${data.quizDate}.txt`;
+      a.click();
+
+      URL.revokeObjectURL(url);
+    };
+  }
+
+  document.getElementById("quizForm").addEventListener("submit", e => {
+    e.preventDefault();
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const username = formData.get("username").trim();
+    const quizDate = formData.get("quizDate");
+
+    if (!username || !quizDate) {
+      alert("Please fill your name and date.");
+      return;
+    }
+
+    // Calculate house scores
+    const scores = calculateScores(formData);
+    const topHouse = getTopHouse(scores);
+
+    // Prepare data to save
+    const saveData = {username, quizDate, scores, topHouse};
+
+    // Save to localStorage to restrict retakes
+    localStorage.setItem("levisvilleQuizTaken", JSON.stringify(saveData));
+
+    // Hide form and show result
+    form.style.display = "none";
+    displayResult(saveData);
+  });
+</script>
+</body>
+</html>
